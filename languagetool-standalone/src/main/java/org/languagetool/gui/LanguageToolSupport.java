@@ -667,6 +667,52 @@ class LanguageToolSupport {
     }
   }
 
+  /**
+   * Apply all first suggestions for all detected errors.
+   * Applies corrections from end to start to avoid position shifts.
+   */
+  public void applyAllCorrections() {
+    if (documentSpans.isEmpty()) {
+      return;
+    }
+    
+    // Create a copy and sort by position (end to start)
+    List<Span> sortedSpans = new ArrayList<>(documentSpans);
+    sortedSpans.sort((a, b) -> Integer.compare(b.start, a.start));
+    
+    Document doc = this.textComponent.getDocument();
+    if (doc != null) {
+      try {
+        if (this.undo != null) {
+          this.undo.startCompoundEdit();
+        }
+        
+        // Apply corrections from end to start
+        for (Span span : sortedSpans) {
+          if (!span.replacement.isEmpty()) {
+            String replacement = span.replacement.get(0);
+            if (doc instanceof AbstractDocument) {
+              ((AbstractDocument) doc).replace(span.start, span.end - span.start, replacement, null);
+            } else {
+              doc.remove(span.start, span.end - span.start);
+              doc.insertString(span.start, replacement, null);
+            }
+          }
+        }
+        
+        // Clear all spans after applying
+        documentSpans.clear();
+        
+      } catch (BadLocationException e) {
+        throw new IllegalArgumentException(e);
+      } finally {
+        if (this.undo != null) {
+          this.undo.endCompoundEdit();
+        }
+      }
+    }
+  }
+
   public void checkDelayed() {
     checkDelayed(null);
   }
