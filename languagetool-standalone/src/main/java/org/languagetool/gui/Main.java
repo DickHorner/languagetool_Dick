@@ -440,6 +440,11 @@ public final class Main {
     clearTextButton.setFocusable(false);
     toolbar.add(clearTextButton);
 
+    JButton acceptAllButton = new JButton(new AcceptAllCorrectionsAction());
+    acceptAllButton.setHideActionText(true);
+    acceptAllButton.setFocusable(false);
+    toolbar.add(acceptAllButton);
+
     cons.insets = new Insets(5, 5, 5, 5);
     cons.fill = GridBagConstraints.BOTH;
     cons.weightx = 10.0f;
@@ -1560,6 +1565,22 @@ public final class Main {
     @Override
     public void actionPerformed(ActionEvent e) {
       ltSupport.getTextComponent().setText("");
+    }
+  }
+
+  class AcceptAllCorrectionsAction extends AbstractAction {
+
+    AcceptAllCorrectionsAction() {
+      super(getLabel("acceptAllCorrections"));
+      putValue(Action.SHORT_DESCRIPTION, messages.getString("acceptAllCorrectionsShortDesc"));
+      putValue(Action.LONG_DESCRIPTION, messages.getString("acceptAllCorrectionsLongDesc"));
+      putValue(Action.SMALL_ICON, getImageIcon("sc_spelldialog.png"));
+      putValue(Action.LARGE_ICON_KEY, getImageIcon("lc_spelldialog.png"));
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+      ltSupport.applyAllCorrections();
     }
   }
 

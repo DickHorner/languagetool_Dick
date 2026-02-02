@@ -667,6 +667,82 @@ class LanguageToolSupport {
     }
   }
 
+  /**
+   * Apply all first suggestions for all detected errors.
+   * Applies corrections from end to start to avoid position shifts.
+   * Shows a message dialog with the result.
+   */
+  public void applyAllCorrections() {
+    if (documentSpans.isEmpty()) {
+      // No corrections to apply
+      JOptionPane.showMessageDialog(frame,
+              messages.getString("noErrorsFound"),
+              messages.getString("acceptAllCorrections"),
+              JOptionPane.INFORMATION_MESSAGE);
+      return;
+    }
+    
+    // Create a copy and sort by position (end to start)
+    List<Span> sortedSpans = new ArrayList<>(documentSpans);
+    sortedSpans.sort((a, b) -> Integer.compare(b.start, a.start));
+    
+    int correctionCount = 0;
+    int skippedCount = 0;
+    
+    Document doc = this.textComponent.getDocument();
+    if (doc != null) {
+      try {
+        if (this.undo != null) {
+          this.undo.startCompoundEdit();
+        }
+        
+        // Apply corrections from end to start
+        for (Span span : sortedSpans) {
+          if (!span.replacement.isEmpty()) {
+            String replacement = span.replacement.get(0);
+            if (doc instanceof AbstractDocument) {
+              ((AbstractDocument) doc).replace(span.start, span.end - span.start, replacement, null);
+            } else {
+              doc.remove(span.start, span.end - span.start);
+              doc.insertString(span.start, replacement, null);
+            }
+            correctionCount++;
+          } else {
+            skippedCount++;
+          }
+        }
+        
+        // Clear spans only if at least one correction was applied
+        if (correctionCount > 0) {
+          documentSpans.clear();
+        }
+        
+        // Show result message
+        String message;
+        if (skippedCount > 0) {
+          message = String.format(
+                  messages.getString("correctionsApplied") + "\n" +
+                  messages.getString("correctionsSkipped"),
+                  correctionCount, skippedCount);
+        } else {
+          message = String.format(messages.getString("correctionsApplied"), correctionCount);
+        }
+        
+        JOptionPane.showMessageDialog(frame,
+                message,
+                messages.getString("acceptAllCorrections"),
+                JOptionPane.INFORMATION_MESSAGE);
+        
+      } catch (BadLocationException e) {
+        throw new IllegalArgumentException(e);
+      } finally {
+        if (this.undo != null) {
+          this.undo.endCompoundEdit();
+        }
+      }
+    }
+  }
+
   public void checkDelayed() {
     checkDelayed(null);
   }
