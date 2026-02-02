@@ -670,15 +670,24 @@ class LanguageToolSupport {
   /**
    * Apply all first suggestions for all detected errors.
    * Applies corrections from end to start to avoid position shifts.
+   * Shows a message dialog with the result.
    */
   public void applyAllCorrections() {
     if (documentSpans.isEmpty()) {
+      // No corrections to apply
+      JOptionPane.showMessageDialog(frame,
+              messages.getString("noErrorsFound"),
+              messages.getString("guiMenuCheckClipboard"),
+              JOptionPane.INFORMATION_MESSAGE);
       return;
     }
     
     // Create a copy and sort by position (end to start)
     List<Span> sortedSpans = new ArrayList<>(documentSpans);
     sortedSpans.sort((a, b) -> Integer.compare(b.start, a.start));
+    
+    int correctionCount = 0;
+    int skippedCount = 0;
     
     Document doc = this.textComponent.getDocument();
     if (doc != null) {
@@ -697,11 +706,30 @@ class LanguageToolSupport {
               doc.remove(span.start, span.end - span.start);
               doc.insertString(span.start, replacement, null);
             }
+            correctionCount++;
+          } else {
+            skippedCount++;
           }
         }
         
         // Clear all spans after applying
         documentSpans.clear();
+        
+        // Show result message
+        String message;
+        if (skippedCount > 0) {
+          message = String.format(
+                  messages.getString("correctionsApplied") + "\n" +
+                  messages.getString("correctionsSkipped"),
+                  correctionCount, skippedCount);
+        } else {
+          message = String.format(messages.getString("correctionsApplied"), correctionCount);
+        }
+        
+        JOptionPane.showMessageDialog(frame,
+                message,
+                messages.getString("acceptAllCorrections"),
+                JOptionPane.INFORMATION_MESSAGE);
         
       } catch (BadLocationException e) {
         throw new IllegalArgumentException(e);
