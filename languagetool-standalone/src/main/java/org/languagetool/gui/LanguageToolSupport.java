@@ -677,7 +677,7 @@ class LanguageToolSupport {
       // No corrections to apply
       JOptionPane.showMessageDialog(frame,
               messages.getString("noErrorsFound"),
-              messages.getString("guiMenuCheckClipboard"),
+              messages.getString("acceptAllCorrections"),
               JOptionPane.INFORMATION_MESSAGE);
       return;
     }
@@ -712,8 +712,10 @@ class LanguageToolSupport {
           }
         }
         
-        // Clear all spans after applying
-        documentSpans.clear();
+        // Clear spans only if at least one correction was applied
+        if (correctionCount > 0) {
+          documentSpans.clear();
+        }
         
         // Show result message
         String message;
